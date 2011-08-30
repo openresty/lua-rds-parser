@@ -19,10 +19,13 @@
 static int rds_parse(lua_State *L);
 static int rds_parse_header(lua_State *L, rds_buf_t *b, rds_header_t *header);
 static int rds_parse_col(lua_State *L, rds_buf_t *b, rds_column_t *col);
-static void free_rds_cols(rds_column_t *cols, size_t ncols);
+static int rds_parse_row(lua_State *L, rds_buf_t *b, rds_header_t *header,
+        rds_column_t *cols, int row);
+static int rds_parse_field(lua_State *L, rds_buf_t *b, rds_header_t *header,
+        rds_column_t *cols, int col, int rows);
 
 
-static char *rds_null = "null";
+static char *rds_null = NULL;
 
 
 static const struct luaL_Reg rds_parser[] = {
@@ -87,9 +90,13 @@ rds_parse(lua_State *L)
     for (i = 0; i < h.col_count; i++) {
         rc = rds_parse_col(L, &b, &cols[i]);
         if (rc != 0) {
-            free_rds_cols(cols, i);
+            free(cols);
             return rc;
         }
+
+        dd("pushing col name onto the stack, top %d", lua_gettop(L));
+
+        lua_pushlstring(L, (char *) cols[i].name.data, cols[i].name.len);
     }
 
     lua_createtable(L, 0 /* narr */, 4 /* nrec */);
@@ -112,7 +119,168 @@ rds_parse(lua_State *L)
         lua_setfield(L, -2, "affected_rows");
     }
 
+    dd("creating resultset, top %d", lua_gettop(L));
+
+    lua_newtable(L);
+
+    for (i = 0; ; i++) {
+        rc = rds_parse_row(L, &b, &h, cols, i);
+        if (rc == -2) {
+            continue;
+        }
+
+        if (rc == 0) {
+            break;
+        }
+
+        free(cols);
+        return rc;
+    }
+
+    dd("saving resultset, top %d", lua_gettop(L));
+    dd("-1: %s", luaL_typename(L, -1));
+    dd("-2: %s", luaL_typename(L, -2));
+    dd("-3: %s", luaL_typename(L, -3));
+
+    lua_setfield(L, -2, "resultset");
+
+    dd("returning");
+
     return 1;
+}
+
+
+static int
+rds_parse_row(lua_State *L, rds_buf_t *b, rds_header_t *header,
+        rds_column_t *cols, int row)
+{
+    int         col;
+    int         rc;
+
+    dd("parsing row %d, top %d", row, lua_gettop(L));
+
+    if (b->last - b->pos < (ssize_t) sizeof(uint8_t)) {
+        lua_pushnil(L);
+        lua_pushliteral(L, "row flag is incomplete");
+        return 2;
+    }
+
+    if (*b->pos++ == 0) {
+        if (b->pos != b->last) {
+            lua_pushnil(L);
+            lua_pushfstring(L, "seen unexpected leve-over data bytes "
+                    "at offset %d after parsing %d rows",
+                    (int) (b->pos - b->start), row);
+            return 2;
+        }
+
+        return 0;
+    }
+
+    dd("creating row table, top %d", lua_gettop(L));
+
+    lua_createtable(L, 0, header->col_count /* nrec */);
+
+    for (col = 0; col < header->col_count; col++) {
+        rc = rds_parse_field(L, b, header, cols, col, row);
+        if (rc == 0) {
+            continue;
+        }
+
+        return rc;
+    }
+
+    dd("saving row table, top %d", lua_gettop(L));
+
+    lua_rawseti(L, -2, row + 1);
+
+    return -2;
+}
+
+
+static int
+rds_parse_field(lua_State *L, rds_buf_t *b, rds_header_t *header,
+        rds_column_t *cols, int col, int rows)
+{
+    size_t          len;
+    lua_Number      num;
+    lua_Integer     integer;
+
+    dd("parsing field at row %d, col %d, top %d", rows, col, lua_gettop(L));
+
+    if (b->last - b->pos < (ssize_t) sizeof(uint32_t)) {
+        lua_pushnil(L);
+        lua_pushfstring(L, "field size is incomplete at offset %d, row %d, "
+                "col %d", (int) (b->pos - b->start), rows, col);
+
+        return 2;
+    }
+
+    len = *(uint32_t *) b->pos;
+
+    b->pos += sizeof(uint32_t);
+
+    /* push the key */
+    lua_pushvalue(L, col + 2);
+
+    if (len == (uint32_t) -1) {
+        /* SQL NULL found */
+        //lua_pushlightuserdata(L, rds_null);
+        lua_pushlightuserdata(L, rds_null);
+
+    } else {
+        if (b->last - b->pos < (ssize_t) len) {
+            lua_pushnil(L);
+            lua_pushfstring(L, "field value is incomplete at offset %d, row %d,"
+                    " col %d", (int) (b->pos - b->start), rows, col);
+            return 2;
+        }
+
+        switch (cols[col].std_type & 0xc000) {
+        case rds_rough_col_type_float:
+            lua_pushlstring(L, (char *) b->pos, len);
+            num = lua_tonumber(L, -1);
+            lua_pop(L, 1);
+            lua_pushnumber(L, num);
+            break;
+
+        case rds_rough_col_type_int:
+            lua_pushlstring(L, (char *) b->pos, len);
+            integer = lua_tointeger(L, -1);
+            lua_pop(L, 1);
+            lua_pushinteger(L, integer);
+            break;
+
+        case rds_rough_col_type_bool:
+            if (*b->pos == '0' || *b->pos == 'f' || *b->pos == 'F')
+            {
+                lua_pushboolean(L, 0);
+                break;
+            }
+
+            if (*b->pos == '1' || *b->pos == 't' || *b->pos == 'T' )
+            {
+                lua_pushboolean(L, 1);
+                break;
+            }
+
+            lua_pushnil(L);
+            lua_pushfstring(L, "unrecognized boolean value at offset %d, "
+                    "row %d, col %d", (int) (b->pos - b->start), rows, col);
+            return 2;
+
+        default:
+            lua_pushlstring(L, (char *) b->pos, len);
+            break;
+        }
+
+        b->pos += len;
+    }
+
+    dd("saving field, top %d", lua_gettop(L));
+    lua_rawset(L, -3);
+
+    return 0;
 }
 
 
@@ -276,16 +444,8 @@ rds_parse_col(lua_State *L, rds_buf_t *b, rds_column_t *col)
         return 2;
     }
 
-    /* save the column name string data */
+    col->name.data = b->pos;
 
-    col->name.data = malloc(col->name.len);
-    if (col->name.data == NULL) {
-        lua_pushnil(L);
-        lua_pushliteral(L, "out of memory");
-        return 2;
-    }
-
-    memcpy(col->name.data, b->pos, col->name.len);
     b->pos += col->name.len;
 
     dd("saved column name \"%.*s\" (len %d, offset %d)",
@@ -293,18 +453,5 @@ rds_parse_col(lua_State *L, rds_buf_t *b, rds_column_t *col)
             (int) col->name.len, (int) (b->pos - b->start));
 
     return 0;
-}
-
-
-static void
-free_rds_cols(rds_column_t *cols, size_t ncols)
-{
-    int         i;
-
-    for(i = 0; i < ncols; i++) {
-        free(cols[i].name.data);
-    }
-
-    free(cols);
 }
 

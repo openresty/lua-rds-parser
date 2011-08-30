@@ -6,6 +6,8 @@ use warnings;
 use t::RdsParser;
 plan tests => 1 * blocks();
 
+#no_long_string();
+
 run_tests();
 
 __DATA__
@@ -42,4 +44,5 @@ __DATA__
 "bob".  # field data
 "\x{00}"  # row list terminator
 --- out
+{"errcode":0,"resultset":[{"name":null,"id":2},{"name":"bob","id":3}]}
 

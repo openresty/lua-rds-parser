@@ -55,9 +55,9 @@ _EOC_
     my @cmd;
 
     if ($ENV{TEST_LUA_USE_VALGRIND}) {
-        @cmd =  ('valgrind', '-q', '--leak-check=full', 'lua', 'test_case.lua');
+        @cmd =  ('valgrind', '-q', '--leak-check=full', 'luajit', 'test_case.lua');
     } else {
-        @cmd =  ('lua', 'test_case.lua');
+        @cmd =  ('luajit', 'test_case.lua');
     }
 
     run3 \@cmd, undef, \$res, \$err;
@@ -73,7 +73,7 @@ _EOC_
 
     } else {
         #is $res, $block->out, "$name - output ok";
-        is_string $res, $block->out, "$name - output ok";
+        is $res, $block->out, "$name - output ok";
     }
 
     #unlink 'test_case.lua' or warn "could not delete \'test_case.lua\':$!";
