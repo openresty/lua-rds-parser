@@ -8,12 +8,12 @@
 #endif
 #include "ddebug.h"
 
+#include "rds_parser.h"
+
 #include <lua.h>
 #include <lauxlib.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
-#include "rds_parser.h"
 
 
 static int rds_parse(lua_State *L);

@@ -8,7 +8,7 @@ use Test::LongString;
 
 our @EXPORT = qw( run_tests );
 
-$ENV{LUA_CPATH} = "?.so;" . ($ENV{LUA_CPATH} || "") . ';' . "/home/lz/luax/?.so;;";
+$ENV{LUA_CPATH} = "?.so;" . ($ENV{LUA_CPATH} || "") . ';' . "/usr/local/openresty/lualib/?.so;;";
 #$ENV{LUA_PATH} = ($ENV{LUA_PATH} || "" ) . ';' . getcwd . "/runtime/?.lua" . ';;';
 
 sub run_test ($) {
@@ -55,9 +55,9 @@ _EOC_
     my @cmd;
 
     if ($ENV{TEST_LUA_USE_VALGRIND}) {
-        @cmd =  ('valgrind', '-q', '--leak-check=full', 'luajit', 'test_case.lua');
+        @cmd =  ('valgrind', '-q', '--leak-check=full', 'lua', 'test_case.lua');
     } else {
-        @cmd =  ('luajit', 'test_case.lua');
+        @cmd =  ('lua', 'test_case.lua');
     }
 
     run3 \@cmd, undef, \$res, \$err;

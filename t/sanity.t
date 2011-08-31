@@ -44,7 +44,7 @@ __DATA__
 "bob".  # field data
 "\x{00}"  # row list terminator
 --- out
-{"errcode":0,"resultset":[{"name":null,"id":2},{"name":"bob","id":3}]}
+{"errcode":0,"resultset":[{"id":2,"name":null},{"id":3,"name":"bob"}]}
 
 
 
@@ -61,7 +61,7 @@ __DATA__
 "\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}".  # insert id
 "\x{00}\x{00}"  # col count
 --- out
-{"errcode":0,"errstr":"Rows matched: 1  Changed: 0  Warnings: 0"}
+{"errstr":"Rows matched: 1  Changed: 0  Warnings: 0","errcode":0}
 
 
 
@@ -104,5 +104,5 @@ __DATA__
 "\x{10}\x{01}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}".  # insert id
 "\x{00}\x{00}"  # col count
 --- out
-{"errcode":0,"affected_rows":3,"errstr":"Rows matched: 1  Changed: 0  Warnings: 0","insert_id":272}
+{"affected_rows":3,"errstr":"Rows matched: 1  Changed: 0  Warnings: 0","errcode":0,"insert_id":272}
 

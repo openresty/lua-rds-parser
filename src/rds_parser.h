@@ -8,6 +8,8 @@
 
 
 #include "resty_dbd_stream.h"
+#include "sys/types.h"
+#include <stdint.h>
 
 
 typedef struct {
