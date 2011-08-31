@@ -20,10 +20,12 @@ Synopsis
     print(res.affected_rows)
 
     local rows = res.resultset
-    for i, row in ipairs(rows) do
-        for col, val in pairs(row) do
-            if val ~= parser.null then
-                print(col .. ": " .. val)
+    if rows then
+        for i, row in ipairs(rows) do
+            for col, val in pairs(row) do
+                if val ~= parser.null then
+                    print(col .. ": " .. val)
+                end
             end
         end
     end
