@@ -2,8 +2,8 @@ Name
     lua-rds-parser - Resty-DBD-Stream (RDS) parser for Lua written in C
 
 Status
-    This module is still under active development and highly
-    experimental.
+    This module is still under active development and considered
+    experimental at the moment.
 
 Synopsis
     local parser = require "rds.parser"
