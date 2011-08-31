@@ -42,7 +42,9 @@ f:close()
 local parser = require "rds.parser"
 local res, err = parser.parse(rds)
 if res == nil then
-    error("failed to parse: " .. err)
+    print(res)
+    print(err)
+    return
 end
 local cjson = require "cjson"
 print(cjson.encode(res))

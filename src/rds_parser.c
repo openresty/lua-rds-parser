@@ -22,7 +22,7 @@ static int rds_parse_col(lua_State *L, rds_buf_t *b, rds_column_t *col);
 static int rds_parse_row(lua_State *L, rds_buf_t *b, rds_header_t *header,
         rds_column_t *cols, int row);
 static int rds_parse_field(lua_State *L, rds_buf_t *b, rds_header_t *header,
-        rds_column_t *cols, int col, int rows);
+        rds_column_t *cols, int col, int row);
 
 
 static char *rds_null = NULL;
@@ -162,7 +162,7 @@ rds_parse_row(lua_State *L, rds_buf_t *b, rds_header_t *header,
     int         col;
     int         rc;
 
-    dd("parsing row %d, top %d", row, lua_gettop(L));
+    dd("parsing row %d, top %d", row + 1, lua_gettop(L));
 
     if (b->last - b->pos < (ssize_t) sizeof(uint8_t)) {
         lua_pushnil(L);
@@ -174,8 +174,8 @@ rds_parse_row(lua_State *L, rds_buf_t *b, rds_header_t *header,
         if (b->pos != b->last) {
             lua_pushnil(L);
             lua_pushfstring(L, "seen unexpected leve-over data bytes "
-                    "at offset %d after parsing %d rows",
-                    (int) (b->pos - b->start), row);
+                    "at offset %d, row %d",
+                    (int) (b->pos - b->start), row + 1);
             return 2;
         }
 
@@ -205,18 +205,19 @@ rds_parse_row(lua_State *L, rds_buf_t *b, rds_header_t *header,
 
 static int
 rds_parse_field(lua_State *L, rds_buf_t *b, rds_header_t *header,
-        rds_column_t *cols, int col, int rows)
+        rds_column_t *cols, int col, int row)
 {
     size_t          len;
     lua_Number      num;
     lua_Integer     integer;
 
-    dd("parsing field at row %d, col %d, top %d", rows, col, lua_gettop(L));
+    dd("parsing field at row %d, col %d, top %d", row + 1, col + 1,
+            lua_gettop(L));
 
     if (b->last - b->pos < (ssize_t) sizeof(uint32_t)) {
         lua_pushnil(L);
         lua_pushfstring(L, "field size is incomplete at offset %d, row %d, "
-                "col %d", (int) (b->pos - b->start), rows, col);
+                "col %d", (int) (b->pos - b->start), row + 1, col + 1);
 
         return 2;
     }
@@ -237,7 +238,7 @@ rds_parse_field(lua_State *L, rds_buf_t *b, rds_header_t *header,
         if (b->last - b->pos < (ssize_t) len) {
             lua_pushnil(L);
             lua_pushfstring(L, "field value is incomplete at offset %d, row %d,"
-                    " col %d", (int) (b->pos - b->start), rows, col);
+                    " col %d", (int) (b->pos - b->start), row + 1, col + 1);
             return 2;
         }
 
@@ -271,7 +272,8 @@ rds_parse_field(lua_State *L, rds_buf_t *b, rds_header_t *header,
 
             lua_pushnil(L);
             lua_pushfstring(L, "unrecognized boolean value at offset %d, "
-                    "row %d, col %d", (int) (b->pos - b->start), rows, col);
+                    "row %d, col %d", (int) (b->pos - b->start), row + 1,
+                    col + 1);
             return 2;
 
         default:
@@ -336,7 +338,8 @@ rds_parse_header(lua_State *L, rds_buf_t *b, rds_header_t *header)
 
     if (*b->pos != 0) {
         lua_pushnil(L);
-        lua_pushliteral(L, "rds: RDS result type must be 0 for now");
+        lua_pushfstring(L, "RDS result type must be 0 for now but got %d",
+                (int) *b->pos);
         return 2;
     }
 
