@@ -12,7 +12,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: basic
+=== TEST 1: simple select
 --- rds eval
 "\x{00}". # endian
 "\x{03}\x{00}\x{00}\x{00}". # format version 0.0.3
@@ -45,4 +45,21 @@ __DATA__
 "\x{00}"  # row list terminator
 --- out
 {"errcode":0,"resultset":[{"name":null,"id":2},{"name":"bob","id":3}]}
+
+
+
+=== TEST 2: update
+--- rds eval
+"\x{00}". # endian
+"\x{03}\x{00}\x{00}\x{00}". # format version 0.0.3
+"\x{00}". # result type
+"\x{00}\x{00}".  # std errcode
+"\x{00}\x{00}" . # driver errcode
+"\x{28}\x{00}".  # driver errstr len
+"Rows matched: 1  Changed: 0  Warnings: 0".  # driver errstr data
+"\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}".  # rows affected
+"\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}\x{00}".  # insert id
+"\x{00}\x{00}"  # col count
+--- out
+{"errcode":0,"errstr":"Rows matched: 1  Changed: 0  Warnings: 0"}
 

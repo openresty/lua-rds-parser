@@ -34,6 +34,10 @@ Description
     Null values in RDS are turned into the light user data "parser.null"
     where "parser" is the module object returned by Lua's "require".
 
+TODO
+    * add support for option "compact" to generate a compact
+      Lua table for the "resultset" field.
+
 Author
     Zhang "agentzh" Yichun <agentzh@gmail.com>
 

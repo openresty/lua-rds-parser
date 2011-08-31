@@ -119,6 +119,11 @@ rds_parse(lua_State *L)
         lua_setfield(L, -2, "affected_rows");
     }
 
+    if (h.col_count == 0) {
+        free(cols);
+        return 1;
+    }
+
     dd("creating resultset, top %d", lua_gettop(L));
 
     lua_newtable(L);
