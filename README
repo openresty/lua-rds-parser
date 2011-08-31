@@ -34,6 +34,14 @@ Description
     Null values in RDS are turned into the light user data "parser.null"
     where "parser" is the module object returned by Lua's "require".
 
+JSON Serialization
+    If you want to serialize the parsed result into JSON, please
+    use the lua-cjson library (http://www.kyne.com.au/~mark/software/lua-cjson.php )
+    instead of lua-yajl, because lua-cjson is faster than lua-yajl
+    in many common cases, and more importantly,
+
+        parser.null == cjson.null ~= yajl.null
+
 TODO
     * add support for option "compact" to generate a compact
       Lua table for the "resultset" field.
