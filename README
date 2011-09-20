@@ -50,6 +50,70 @@ JSON Serialization
 
         parser.null == cjson.null ~= yajl.null
 
+Using with HttpDrizzleModule
+    To use with ngx_drizzle, here is a small example:
+
+        upstream backend {
+            drizzle_server 127.0.0.1:3306 protocol=mysql
+                           dbname=ngx_test user=ngx_test password=ngx_test;
+            drizzle_keepalive max=10 overflow=ignore mode=single;
+        }
+
+        server {
+            ...
+
+            location /mysql {
+               drizzle_query $echo_request_body;
+               drizzle_pass backend;
+            }
+
+            location /api {
+               content_by_lua '
+                   local sql = "select * from cats"
+                   local resp = ngx.location.capture("/mysql", {
+                       method = ngx.HTTP_POST, body = sql
+                   })
+                   if resp.status ~= ngx.HTTP_OK or not resp.body then
+                       error("failed to query mysql")
+                   end
+
+                   local parser = require "rds.parser"
+                   local res, err = parser.parse(resp.body)
+                   if res == nil then
+                       error("failed to parse RDS: " .. err)
+                   end
+
+                   local rows = res.resultset
+                   if not rows or #rows == 0 then
+                       ngx.say("empty resultset")
+                       ngx.exit(0)
+                   end
+
+                   for i, row in ipairs(rows) do
+                       ngx.print("row ", i, ": ")
+                       for col, val in pairs(row) do
+                           if val ~= parser.null then
+                               ngx.print(col, "=", val, " ")
+                           else
+                               ngx.print(col, "=null ")
+                           end
+                       end
+                       ngx.say()
+                   end
+               ';
+            }
+        }
+
+    On my machine, GET /api will yield
+
+        row 1: id=2 name=null
+        row 2: id=3 name=bob
+
+    of course, the actual output depends on the structure and contents of the
+    "cats" table in the mysql database.
+
+    You can use this Lua library with the ngx_postgres module in a similar way.
+
 Installation
   Build requirements
     *   Lua (http://www.lua.org/)
