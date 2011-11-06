@@ -151,6 +151,7 @@ rds_parse(lua_State *L)
 
     dd("returning");
 
+    free(cols);
     return 1;
 }
 
