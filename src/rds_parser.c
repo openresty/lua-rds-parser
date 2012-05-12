@@ -56,18 +56,7 @@ rds_parse(lua_State *L)
     rds_column_t       *cols;
     int                 i;
 
-    if (lua_gettop(L) != 1) {
-        lua_pushnil(L);
-        lua_pushfstring(L, "expecting 1 argument but got %d", lua_gettop(L));
-        return 2;
-    }
-
-    if (lua_type(L, 1) != LUA_TSTRING) {
-        lua_pushnil(L);
-        lua_pushfstring(L, "expecting string argument but got type %s",
-                luaL_typename(L, 1));
-        return 2;
-    }
+    luaL_checktype(L, 1, LUA_TSTRING);
 
     b.start = (u_char *) lua_tolstring(L, 1, &len);
     b.end = b.start + len;
@@ -80,17 +69,11 @@ rds_parse(lua_State *L)
         return rc;
     }
 
-    cols = malloc(h.col_count * sizeof(rds_column_t));
-    if (cols == NULL) {
-        lua_pushnil(L);
-        lua_pushliteral(L, "out of memory");
-        return 2;
-    }
+    cols = lua_newuserdata(L, h.col_count * sizeof(rds_column_t));
 
     for (i = 0; i < h.col_count; i++) {
         rc = rds_parse_col(L, &b, &cols[i]);
         if (rc != 0) {
-            free(cols);
             return rc;
         }
 
@@ -120,7 +103,6 @@ rds_parse(lua_State *L)
     }
 
     if (h.col_count == 0) {
-        free(cols);
         return 1;
     }
 
@@ -138,7 +120,6 @@ rds_parse(lua_State *L)
             break;
         }
 
-        free(cols);
         return rc;
     }
 
@@ -149,9 +130,8 @@ rds_parse(lua_State *L)
 
     lua_setfield(L, -2, "resultset");
 
-    dd("returning");
+    dd("returning %s", luaL_typename(L, -1));
 
-    free(cols);
     return 1;
 }
 
@@ -228,7 +208,7 @@ rds_parse_field(lua_State *L, rds_buf_t *b, rds_header_t *header,
     b->pos += sizeof(uint32_t);
 
     /* push the key */
-    lua_pushvalue(L, col + 2);
+    lua_pushvalue(L, col + 3);
 
     if (len == (uint32_t) -1) {
         /* SQL NULL found */
