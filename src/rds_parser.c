@@ -16,6 +16,9 @@
 #include <string.h>
 
 
+#define LUA_RDS_PARSER_VERSION "0.05"
+
+
 static int rds_parse(lua_State *L);
 static int rds_parse_header(lua_State *L, rds_buf_t *b, rds_header_t *header);
 static int rds_parse_col(lua_State *L, rds_buf_t *b, rds_column_t *col);
@@ -38,6 +41,9 @@ int
 luaopen_rds_parser(lua_State *L)
 {
     luaL_register(L, "rds.parser", rds_parser);
+
+    lua_pushliteral(L, LUA_RDS_PARSER_VERSION);
+    lua_setfield(L, -2, "_VERSION");
 
     lua_pushlightuserdata(L, rds_null);
     lua_setfield(L, -2, "null");
