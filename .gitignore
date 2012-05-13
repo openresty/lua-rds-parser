@@ -7,3 +7,5 @@ test_case.lua
 *.so
 reindex
 tags
+*.plist
+analyze
