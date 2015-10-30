@@ -38,8 +38,8 @@ parser.so: src/rds_parser.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
 install:
-	$(INSTALL) -d $(DESTDIR)/$(LUA_LIB_DIR)/rds
-	$(INSTALL) parser.so $(DESTDIR)/$(LUA_LIB_DIR)/rds
+	$(INSTALL) -d $(DESTDIR)$(LUA_LIB_DIR)/rds
+	$(INSTALL) parser.so $(DESTDIR)$(LUA_LIB_DIR)/rds
 
 clean:
 	$(RM) *.so *.o rds/*.so
