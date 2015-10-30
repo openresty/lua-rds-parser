@@ -12,6 +12,11 @@
 #include <stdint.h>
 
 
+#ifndef u_char
+#define u_char  unsigned char
+#endif
+
+
 typedef struct {
     u_char      *data;
     size_t       len;
