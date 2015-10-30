@@ -34,6 +34,9 @@ all: parser.so
 
 src/rds_parser.o: src/ddebug.h src/rds_parser.h src/resty_dbd_stream.h
 
+.c.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $(BUILD_CFLAGS) -o $@ $<
+
 parser.so: src/rds_parser.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
