@@ -14,7 +14,7 @@ env:
     - LUA=libluajit-5.1-dev LUA_DEV=libluajit-5.1-dev LUA_INCLUDE_DIR=/usr/include/luajit-2.0 LUA_CMODULE_DIR=/usr/lib/lua/5.1 LUALIB=-lluajit-5.1
 
 before_install:
-    - git clone -b fix-problem-cppcheck2 https://github.com/xiaocang/lua-cjson.git
+    - git clone https://github.com/openresty/lua-cjson.git
 
 install:
     - sudo apt-get install -qq -y $LUA luarocks cppcheck valgrind
