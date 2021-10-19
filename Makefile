@@ -50,17 +50,17 @@ clean:
 test: all
 	$(INSTALL) -d rds
 	$(INSTALL) parser.so rds/
-	prove -r t
+	prove -I. -r t
 
 valtest: parser.so
 	$(INSTALL) -d rds
 	$(INSTALL) parser.so rds/
-	TEST_LUA_USE_VALGRIND=1 prove -r t
+	TEST_LUA_USE_VALGRIND=1 prove -I. -r t
 
 t: parser.so
 	$(INSTALL) -d rds
 	$(INSTALL) parser.so rds/
-	TEST_LUA_USE_VALGRIND=1 prove t/sanity.t
+	TEST_LUA_USE_VALGRIND=1 prove -I. t/sanity.t
 
 dist:
 	git archive --prefix="$(dist)/" master | \
